@@ -1,0 +1,29 @@
+{
+    "name": "jnjxp/viewd",
+    "type": "library",
+    "description": "render views based on request",
+    "license": "AGPL-3.0",
+    "authors": [
+        {
+            "name": "jake johns",
+            "email": "jake@jakejohns.net"
+        }
+    ],
+    "require": {
+        "aura/view": "^2.1",
+        "psr/http-message": "^1.0"
+    },
+    "require-dev": {
+        "zendframework/zend-diactoros": "~1.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Jnjxp\\Viewd\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Jnjxp\\Viewd\\": "tests/"
+        }
+    }
+}
