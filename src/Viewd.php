@@ -40,30 +40,32 @@ use Psr\Http\Message\ResponseInterface as Response;
  * @author   Jake Johns <jake@jakejohns.net>
  * @license  http://www.gnu.org/licenses/agpl-3.0.txt AGPL V3
  * @link     http://jakejohns.net
- *
  */
 class Viewd
 {
     /**
-     * view object
+     * View object
      *
      * @var View
+     *
      * @access protected
      */
     protected $view;
 
     /**
-     * path prefix for viewd scripts
+     * Path prefix for viewd scripts
      *
      * @var string
+     *
      * @access protected
      */
     protected $prefix;
 
     /**
-     * error view name
+     * Error view name
      *
      * @var string
+     *
      * @access protected
      */
     protected $error;
@@ -116,7 +118,7 @@ class Viewd
     }
 
     /**
-     * shouldRenderError
+     * ShouldRenderError
      *
      * @param Request  $request  original request
      * @param Response $response response
@@ -138,7 +140,7 @@ class Viewd
     }
 
     /**
-     * getName
+     * GetName
      *
      * @param Request $request request
      *
@@ -162,7 +164,7 @@ class Viewd
     }
 
     /**
-     * has
+     * Has
      *
      * @param string $name name of script
      *
@@ -176,7 +178,7 @@ class Viewd
     }
 
     /**
-     * render
+     * Render
      *
      * @param string   $name     name of script to render
      * @param Response $response response
@@ -194,7 +196,7 @@ class Viewd
     }
 
     /**
-     * error
+     * Error
      *
      * @param Response $response response
      *
