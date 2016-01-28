@@ -71,6 +71,15 @@ class Viewd
     protected $error;
 
     /**
+     * ResponderFactory
+     *
+     * @var mixed
+     *
+     * @access protected
+     */
+    protected $responderFactory;
+
+    /**
      * __construct
      *
      * @param View   $view   view renderer
@@ -84,6 +93,34 @@ class Viewd
         $this->view = $view;
         $this->prefix = $prefix;
         $this->error = $error;
+        $this->setResponderFactory([$this, 'responderFactory']);
+    }
+
+    /**
+     * SetResponderFactory
+     *
+     * @param callable $factory DESCRIPTION
+     *
+     * @return mixed
+     *
+     * @access public
+     */
+    public function setResponderFactory(callable $factory)
+    {
+        $this->responderFactory = $factory;
+        return $this;
+    }
+
+    /**
+     * ResponderFactory
+     *
+     * @return mixed
+     *
+     * @access protected
+     */
+    protected function responderFactory()
+    {
+        return new SimpleResponder($this->view);
     }
 
     /**
@@ -105,13 +142,13 @@ class Viewd
         $name = $this->getName($request);
 
         if ($this->has($name)) {
-            return $this->render($name, $response);
+            return $this->render($name, $request, $response);
         }
 
         $newResponse = $next ? $next($request, $response) : $response;
 
         if ($this->shouldRenderError($request, $newResponse)) {
-            return $this->error($newResponse);
+            return $this->error($request, $newResponse);
         }
 
         return $newResponse;
@@ -181,33 +218,35 @@ class Viewd
      * Render
      *
      * @param string   $name     name of script to render
+     * @param Request  $request  request
      * @param Response $response response
      *
      * @return Response
      *
      * @access protected
      */
-    protected function render($name, Response $response)
+    protected function render($name, Request $request, Response $response)
     {
-        $view = $this->view;
-        $view->setView($name);
-        $response->getBody()->write($view());
-        return $response;
+        $responder = call_user_func($this->responderFactory);
+        $request = $request->withAttribute('view', $name);
+        return $responder($request, $response);
     }
 
     /**
      * Error
      *
+     * @param Request  $request  request
      * @param Response $response response
      *
      * @return Response
      *
      * @access protected
      */
-    protected function error(Response $response)
+    protected function error(Request $request, Response $response)
     {
         return $this->render(
             $this->error,
+            $request,
             $response->withStatus(404)
         );
     }
