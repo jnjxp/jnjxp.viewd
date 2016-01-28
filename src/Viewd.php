@@ -40,33 +40,44 @@ use Psr\Http\Message\ResponseInterface as Response;
  * @author   Jake Johns <jake@jakejohns.net>
  * @license  http://www.gnu.org/licenses/agpl-3.0.txt AGPL V3
  * @link     http://jakejohns.net
- *
  */
 class Viewd
 {
     /**
-     * view object
+     * View object
      *
      * @var View
+     *
      * @access protected
      */
     protected $view;
 
     /**
-     * path prefix for viewd scripts
+     * Path prefix for viewd scripts
      *
      * @var string
+     *
      * @access protected
      */
     protected $prefix;
 
     /**
-     * error view name
+     * Error view name
      *
      * @var string
+     *
      * @access protected
      */
     protected $error;
+
+    /**
+     * ResponderFactory
+     *
+     * @var mixed
+     *
+     * @access protected
+     */
+    protected $responderFactory;
 
     /**
      * __construct
@@ -82,6 +93,34 @@ class Viewd
         $this->view = $view;
         $this->prefix = $prefix;
         $this->error = $error;
+        $this->setResponderFactory([$this, 'responderFactory']);
+    }
+
+    /**
+     * SetResponderFactory
+     *
+     * @param callable $factory DESCRIPTION
+     *
+     * @return mixed
+     *
+     * @access public
+     */
+    public function setResponderFactory(callable $factory)
+    {
+        $this->responderFactory = $factory;
+        return $this;
+    }
+
+    /**
+     * ResponderFactory
+     *
+     * @return mixed
+     *
+     * @access protected
+     */
+    protected function responderFactory()
+    {
+        return new SimpleResponder($this->view);
     }
 
     /**
@@ -103,20 +142,20 @@ class Viewd
         $name = $this->getName($request);
 
         if ($this->has($name)) {
-            return $this->render($name, $response);
+            return $this->render($name, $request, $response);
         }
 
         $newResponse = $next ? $next($request, $response) : $response;
 
         if ($this->shouldRenderError($request, $newResponse)) {
-            return $this->error($newResponse);
+            return $this->error($request, $newResponse);
         }
 
         return $newResponse;
     }
 
     /**
-     * shouldRenderError
+     * ShouldRenderError
      *
      * @param Request  $request  original request
      * @param Response $response response
@@ -138,7 +177,7 @@ class Viewd
     }
 
     /**
-     * getName
+     * GetName
      *
      * @param Request $request request
      *
@@ -162,7 +201,7 @@ class Viewd
     }
 
     /**
-     * has
+     * Has
      *
      * @param string $name name of script
      *
@@ -176,36 +215,38 @@ class Viewd
     }
 
     /**
-     * render
+     * Render
      *
      * @param string   $name     name of script to render
+     * @param Request  $request  request
      * @param Response $response response
      *
      * @return Response
      *
      * @access protected
      */
-    protected function render($name, Response $response)
+    protected function render($name, Request $request, Response $response)
     {
-        $view = $this->view;
-        $view->setView($name);
-        $response->getBody()->write($view());
-        return $response;
+        $responder = call_user_func($this->responderFactory);
+        $request = $request->withAttribute('view', $name);
+        return $responder($request, $response);
     }
 
     /**
-     * error
+     * Error
      *
+     * @param Request  $request  request
      * @param Response $response response
      *
      * @return Response
      *
      * @access protected
      */
-    protected function error(Response $response)
+    protected function error(Request $request, Response $response)
     {
         return $this->render(
             $this->error,
+            $request,
             $response->withStatus(404)
         );
     }
