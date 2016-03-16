@@ -83,6 +83,7 @@ class SimpleResponder extends AbstractResponder
         $name = $this->getViewName();
         $this->view->setView($name);
         $this->addPayloadData();
+        $this->render();
     }
 
     /**
@@ -119,6 +120,6 @@ class SimpleResponder extends AbstractResponder
         if (! $name = $this->request->getAttribute($this->attribute)) {
             throw new \Exception('View attribute not set');
         }
-        return $this->prefix . $name;
+        return $name;
     }
 }

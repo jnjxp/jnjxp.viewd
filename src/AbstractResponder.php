@@ -55,16 +55,6 @@ abstract class AbstractResponder
     protected $view;
 
     /**
-     * Prefix
-     *
-     * @var null|string
-     *
-     * @access protected
-     */
-    protected $prefix;
-
-
-    /**
      * __construct
      *
      * @param View $view Aura\View object
@@ -74,20 +64,6 @@ abstract class AbstractResponder
     public function __construct(View $view)
     {
         $this->view = $view;
-    }
-
-    /**
-     * Set prefix
-     *
-     * @param mixed $prefix DESCRIPTION
-     *
-     * @return mixed
-     *
-     * @access public
-     */
-    public function setPrefix($prefix)
-    {
-        $this->prefix = $prefix;
     }
 
     /**
@@ -111,7 +87,6 @@ abstract class AbstractResponder
         $this->payload  = $payload;
 
         $this->prepare();
-        $this->render();
 
         return $this->response;
     }

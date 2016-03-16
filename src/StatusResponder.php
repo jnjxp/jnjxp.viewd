@@ -56,10 +56,6 @@ class StatusResponder extends AbstractResponder
     protected function prepare()
     {
         parent::prepare();
-
-        $name = $this->getViewName();
-        $this->view->setView($name);
-
         $method = $this->getMethodForPayload();
         $this->$method();
     }
@@ -82,62 +78,6 @@ class StatusResponder extends AbstractResponder
     }
 
     /**
-     * GetViewName
-     *
-     * @return string
-     *
-     * @access protected
-     */
-    protected function getViewName()
-    {
-        if (! $this->payload) {
-            return $this->prefix . 'no-content';
-        }
-
-        return $this->prefix
-            . str_replace('-', '', strtolower($this->payload->getStatus()));
-    }
-
-    /**
-     * Accepted
-     *
-     * @return void
-     *
-     * @access protected
-     */
-    protected function accepted()
-    {
-        $this->response = $this->response->withStatus(202);
-        $this->view->addData($this->payload->getOutput());
-    }
-
-    /**
-     * Created
-     *
-     * @return void
-     *
-     * @access protected
-     */
-    protected function created()
-    {
-        $this->response = $this->response->withStatus(201);
-        $this->view->addData($this->payload->getOutput());
-    }
-
-    /**
-     * Deleted
-     *
-     * @return void
-     *
-     * @access protected
-     */
-    protected function deleted()
-    {
-        $this->response = $this->response->withStatus(204);
-        $this->view->addData($this->payload->getOutput());
-    }
-
-    /**
      * Error
      *
      * @return void
@@ -147,38 +87,15 @@ class StatusResponder extends AbstractResponder
     protected function error()
     {
         $this->response = $this->response->withStatus(500);
-        $this->view->addData(
-            [
-                'input' => $this->payload->getInput(),
-                'error' => $this->payload->getOutput(),
-            ]
+        $exception = $this->payload->getOutput();
+        $class = get_class($exception);
+        $message = $exception->getMessage();
+        $this->response->getBody()->write(
+            sprintf(
+                'Error %s : %s',
+                $class, $message
+            )
         );
-    }
-
-    /**
-     * Failure
-     *
-     * @return void
-     *
-     * @access protected
-     */
-    protected function failure()
-    {
-        $this->response = $this->response->withStatus(400);
-        $this->view->addData($this->payload->getInput());
-    }
-
-    /**
-     * Found
-     *
-     * @return void
-     *
-     * @access protected
-     */
-    protected function found()
-    {
-        $this->response = $this->response->withStatus(200);
-        $this->view->addData($this->payload->getOutput());
     }
 
     /**
@@ -191,90 +108,7 @@ class StatusResponder extends AbstractResponder
     protected function noContent()
     {
         $this->response = $this->response->withStatus(204);
-    }
-
-    /**
-     * NotAuthenticated
-     *
-     * @return void
-     *
-     * @access protected
-     */
-    protected function notAuthenticated()
-    {
-        $this->response = $this->response->withStatus(401);
-        $this->view->addData($this->payload->getInput());
-    }
-
-    /**
-     * NotAuthorized
-     *
-     * @return void
-     *
-     * @access protected
-     */
-    protected function notAuthorized()
-    {
-        $this->response = $this->response->withStatus(403);
-        $this->view->addData($this->payload->getInput());
-    }
-
-    /**
-     * NotFound
-     *
-     * @return void
-     *
-     * @access protected
-     */
-    protected function notFound()
-    {
-        $this->response = $this->response->withStatus(404);
-        $this->view->addData($this->payload->getInput());
-    }
-
-    /**
-     * NotValid
-     *
-     * @return void
-     *
-     * @access protected
-     */
-    protected function notValid()
-    {
-        $this->response = $this->response->withStatus(422);
-        $this->view->addData(
-            [
-            'input' => $this->payload->getInput(),
-            'output' => $this->payload->getOutput(),
-            'messages' => $this->payload->getMessages(),
-            ]
-        );
-    }
-
-    /**
-     * Processing
-     *
-     * @return void
-     *
-     * @access protected
-     */
-    protected function processing()
-    {
-        $this->response = $this->response->withStatus(203);
-        $this->view->addData($this->payload->getOutput());
-    }
-
-    /**
-     * Success
-     *
-     * @return void
-     *
-     * @access protected
-     */
-    protected function success()
-    {
-        $this->response = $this->response->withStatus(200);
-        $this->view->addData($this->payload->getOutput());
+        $this->response->getBody()->write('No Content');
     }
 
     /**
@@ -287,24 +121,12 @@ class StatusResponder extends AbstractResponder
     protected function unknown()
     {
         $this->response = $this->response->withStatus(500);
-        $this->view->addData(
-            [
-            'error' => 'Unknown domain payload status',
-            'status' => $this->payload->getStatus(),
-            ]
+        $this->response->getBody()->write(
+            sprintf(
+                'Unknown Status: "%s"',
+                $this->payload->getStatus()
+            )
         );
     }
 
-    /**
-     * Updated
-     *
-     * @return void
-     *
-     * @access protected
-     */
-    protected function updated()
-    {
-        $this->response = $this->response->withStatus(303);
-        $this->view->addData($this->payload->getOutput());
-    }
 }
