@@ -1,29 +1,5 @@
 <?php
-/**
-* Jnjxp\Viewd
-*
-* PHP version 5
-*
-* This program is free software: you can redistribute it and/or modify it
-* under the terms of the GNU Affero General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or (at your
-* option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU Affero General Public License for more details.
-*
-* You should have received a copy of the GNU Affero General Public License
-* along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*
-* @category  Tests
-* @package   Jnjxp\Viewd
-* @author    Jake Johns <jake@jakejohns.net>
-* @copyright 2015 Jake Johns
-* @license   http://www.gnu.org/licenses/agpl-3.0.txt AGPL V3
-* @link      http://jakejohns.net
- */
+// @codingStandardsIgnoreFile
 
 namespace Jnjxp\Viewd;
 
@@ -31,21 +7,11 @@ use Aura\View\ViewFactory;
 use Zend\Diactoros\ServerRequestFactory;
 use Zend\Diactoros\Response;
 
-/**
- * ViewdTest
- *
- * @category CategoryName
- * @package  PackageName
- * @author   Jake Johns <jake@jakejohns.net>
- * @license  http://www.gnu.org/licenses/agpl-3.0.txt AGPL V3
- * @link     http://jakejohns.net
- *
- */
 class ViewdTest extends \PHPUnit_Framework_TestCase
 {
 
     /**
-     * setUp
+     * SetUp
      *
      * @return mixed
      *
@@ -54,19 +20,14 @@ class ViewdTest extends \PHPUnit_Framework_TestCase
     public function setUp()
     {
         $this->view = (new ViewFactory)->newInstance();
-        $this->viewd = new Viewd($this->view);
+        $this->responder = new ViewResponder($this->view);
+        $this->responder->setPrefix(null);
 
         $views = $this->view->getViewRegistry();
+        $layouts = $this->view->getLayoutRegistry();
 
         $views->set(
-            'viewd/index',
-            function () {
-                echo 'index content';
-            }
-        );
-
-        $views->set(
-            'viewd/foo',
+            'foo',
             function () {
                 echo 'foo content';
             }
@@ -79,6 +40,22 @@ class ViewdTest extends \PHPUnit_Framework_TestCase
             }
         );
 
+        $layouts->set(
+            'default',
+            function () {
+                echo 'Layout: ';
+                echo $this->getContent();
+            }
+        );
+
+        $layouts->set(
+            'other',
+            function () {
+                echo 'Other: ';
+                echo $this->getContent();
+            }
+        );
+
     }
 
     /**
@@ -88,123 +65,61 @@ class ViewdTest extends \PHPUnit_Framework_TestCase
      *
      * @access public
      */
-    public function testIndex()
+    public function testResponder()
     {
-        $response = new Response();
-        $request = ServerRequestFactory::fromGlobals();
-        $viewd = $this->viewd;
+        $response  = new Response();
+        $request   = ServerRequestFactory::fromGlobals()
+                        ->withAttribute(ViewResponder::VIEW, 'foo');
+        $responder = $this->responder;
 
-        $out = $viewd($request, $response);
+        $responder->setDefaultLayout(null);
 
-        $this->assertEquals('index content', (string) $out->getBody());
-        $this->assertEquals(200, $out->getStatusCode());
-    }
-
-    /**
-     * testPath
-     *
-     * @return mixed
-     *
-     * @access public
-     */
-    public function testPath()
-    {
-        $response = new Response();
-        $request = ServerRequestFactory::fromGlobals()
-            ->withRequestTarget('/foo');
-
-        $viewd = $this->viewd;
-
-        $out = $viewd($request, $response);
+        $out = $responder($request, $response);
 
         $this->assertEquals('foo content', (string) $out->getBody());
         $this->assertEquals(200, $out->getStatusCode());
     }
 
-    /**
-     * testAttr
-     *
-     * @return mixed
-     *
-     * @access public
-     */
-    public function testAttr()
+    public function testNotFound()
     {
-        $response = new Response();
-        $request = ServerRequestFactory::fromGlobals()
-            ->withAttribute('jnjxp/viewd:script', 'foo');
+        $response  = new Response();
+        $request   = ServerRequestFactory::fromGlobals()
+                        ->withAttribute(ViewResponder::VIEW, 'bar');
+        $responder = $this->responder;
 
-        $viewd = $this->viewd;
+        $responder->setDefaultLayout(null);
+        $responder->setNotFound('error');
 
-        $out = $viewd($request, $response);
-
-        $this->assertEquals('foo content', (string) $out->getBody());
-        $this->assertEquals(200, $out->getStatusCode());
-    }
-
-    /**
-     * testError
-     *
-     * @return mixed
-     *
-     * @access public
-     */
-    public function testError()
-    {
-        $response = new Response();
-        $request = ServerRequestFactory::fromGlobals()
-            ->withRequestTarget('/foobarbaz');
-
-        $viewd = $this->viewd;
-
-        $out = $viewd($request, $response);
+        $out = $responder($request, $response);
 
         $this->assertEquals('error content', (string) $out->getBody());
         $this->assertEquals(404, $out->getStatusCode());
     }
 
-    /**
-     * testNoError
-     *
-     * @return mixed
-     *
-     * @access public
-     */
-    public function testNoError()
+    public function testDefaultLayout()
     {
-        $response = new Response();
-        $response->getBody()->write('Other Body');
-        $request = ServerRequestFactory::fromGlobals()
-            ->withRequestTarget('/foobarbaz');
+        $response  = new Response();
+        $request   = ServerRequestFactory::fromGlobals()
+                        ->withAttribute(ViewResponder::VIEW, 'foo');
+        $responder = $this->responder;
 
-        $viewd = $this->viewd;
+        $out = $responder($request, $response);
 
-        $out = $viewd($request, $response);
-
-        $this->assertEquals('Other Body', (string) $out->getBody());
+        $this->assertEquals('Layout: foo content', (string) $out->getBody());
         $this->assertEquals(200, $out->getStatusCode());
     }
 
-
-    /**
-     * testNoError
-     *
-     * @return mixed
-     *
-     * @access public
-     */
-    public function testStopError()
+    public function testOtherLayout()
     {
-        $response = new Response();
-        $request = ServerRequestFactory::fromGlobals()
-            ->withRequestTarget('/bingbamboom')
-            ->withAttribute('jnjxp/viewd:no-error', true);
+        $response  = new Response();
+        $request   = ServerRequestFactory::fromGlobals()
+            ->withAttribute(ViewResponder::VIEW, 'foo')
+            ->withAttribute(ViewResponder::LAYOUT, 'other');
+        $responder = $this->responder;
 
-        $viewd = $this->viewd;
+        $out = $responder($request, $response);
 
-        $out = $viewd($request, $response);
-
-        $this->assertEquals('', (string) $out->getBody());
+        $this->assertEquals('Other: foo content', (string) $out->getBody());
         $this->assertEquals(200, $out->getStatusCode());
     }
 }
